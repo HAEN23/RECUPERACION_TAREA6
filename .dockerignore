@@ -1,0 +1,22 @@
+# filepath: c:\Mis archivos\UNIVERSIDAD\docker-reportes\docker-reportes\.dockerignore
+# Ignorar dependencias de Node
+node_modules
+
+# Ignorar caché y compilación de Next.js
+.next
+
+# Ignorar logs de npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignorar archivos de entorno locales
+.env
+.env.local
+
+# Ignorar configuración de Git
+.git
+.gitignore
+
+# Ignorar datos de la base de datos de Docker
+postgres_data

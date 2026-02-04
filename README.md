@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Cómo Ejecutar el Proyecto
+Para levantar todo el proyecto, solo necesitas tener Docker instalado.
 
-## Getting Started
+1.- Abre una terminal en la raíz del proyecto (en la carpeta que contiene el archivo docker-compose.yml)osea en la carpeta docker-reportes.
 
-First, run the development server:
+2.- Ejecuta el siguiente comando:
+    docker compose up --build
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Este comando construirá la aplicación, iniciará la base de datos, la llenará con datos de prueba y finalmente levantará la aplicación web.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Una vez que termine, puedes acceder a la aplicación en tu navegador en la dirección: http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3.- Para detener todo, presiona Ctrl + C en la terminal.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+## Justificación de los Índices
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Para asegurar que las consultas a las vistas (`VIEWs`) sean rápidas y eficientes, se han creado varios índices en el archivo `db/04_indexes.sql`. Un índice funciona de manera similar como un índice de un libro: en lugar de que la base de datos tenga que leer una tabla completa para encontrar los datos que necesita, puede usar el índice para ir directamente a la ubicación correcta.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Índices para `view_ventas_por_categoria`
 
-## Deploy on Vercel
+Esta vista realiza uniones con (`JOIN`) entre cuatro tablas y filtra por el estado de la orden. 
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1.  **`idx_orden_detalles_producto_id` y `idx_productos_categoria_id`**:
+    *   **Propósito**: Aceleran las uniones (`JOIN`) entre `orden_detalles` y `productos`, y entre `productos` y `categorias`. Sin estos índices, la base de datos tendría que escanear las tablas completas para encontrar las filas que coinciden, lo cual tardaria mucho.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2.  **`idx_ordenes_status`**:
+    *   **Propósito**: Es un índice parcial que acelera el filtrado `WHERE o.status IN ('entregado', 'pagado')`. Al indexar solo las filas con los estados que nos interesan, el índice es más pequeño y eficiente, permitiendo a la base de datos descartar rápidamente las órdenes que no son importantes para el reporte.
+
+### Índices para `view_analisis_clientes`
+
+Esta vista une `usuarios` con `ordenes` y agrupa los resultados.
+
+1.  **`idx_ordenes_usuario_id`**:
+    *   **Propósito**: Acelera la unión (`LEFT JOIN`) entre la tabla `usuarios` y la tabla `ordenes` a través de la columna `usuario_id`. Es importante para encontrar rápidamente todas las órdenes de un cliente específico.
+
+2.  **`idx_usuarios_premium_id`**:
+    *   **Propósito**: Es un índice compuesto que optimiza la agrupación (`GROUP BY es_premium`). Al tener la columna `es_premium` primero en el índice, la base de datos puede agrupar a los clientes de manera facil sin tener que ordenar toda la tabla.
+
+
+
+
+
