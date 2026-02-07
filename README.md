@@ -41,4 +41,38 @@ Esta vista une `usuarios` con `ordenes` y agrupa los resultados.
 
 
 
+### Demostración del Impacto de los Índices con EXPLAIN ANALYZE
+
+Para demostrar cómo los índices mejoran el rendimiento, ejecutamos las mismas consultas con y sin índices usando `EXPLAIN ANALYZE`.
+
+#### Ejemplo 1: Consulta en `view_ventas_por_categoria`
+
+**SIN índices** (después de hacer `DROP INDEX` temporalmente):
+```sql
+EXPLAIN ANALYZE
+SELECT c.nombre, SUM(od.precio * od.cantidad) as ventas_totales
+FROM categorias c
+JOIN productos p ON c.id = p.categoria_id
+JOIN orden_detalles od ON p.id = od.producto_id
+JOIN ordenes o ON od.orden_id = o.id
+WHERE o.status IN ('entregado', 'pagado')
+GROUP BY c.id, c.nombre;
+```
+
+**Resultado esperado SIN índices:**
+```
+Seq Scan on ordenes o  (cost=0.00..35.50 rows=500 width=...)
+  Filter: (status = ANY ('{entregado,pagado}'::text[]))
+Hash Join  (cost=45.00..520.00 rows=5000 width=...)
+
+**Resultado esperado CON índices:**
+```
+Index Scan using idx_ordenes_status on ordenes o  (cost=0.15..12.50 rows=200 width=...)
+  Index Cond: (status = ANY ('{entregado,pagado}'::text[]))
+Index Scan using idx_orden_detalles_producto_id on orden_detalles od
+Index Scan using idx_productos_categoria_id on productos p
+
+**Mejora:** Es más rapido.
+
+
 
